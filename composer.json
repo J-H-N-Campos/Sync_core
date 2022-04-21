@@ -1,0 +1,15 @@
+{
+    "require": {
+        "hi-folks/statistics": "^0.2.1",
+        "dompdf/dompdf": "^1.1.1",
+        "clegginabox/pdf-merger": "dev-master",
+        "setasign/fpdf": "^1.8.4",
+        "setasign/fpdi": "^2.3.6",
+        "php-webdriver/webdriver": "^1.12",
+        "maatwebsite/excel": "^3.1",
+        "phpoffice/phpspreadsheet": "^1.18",
+        "picqer/php-barcode-generator": "^0.2.2",
+        "bacon/bacon-qr-code": "^1.0",
+        "rapidwebltd/php-google-people-api": "^1.0"
+    }
+}
