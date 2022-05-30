@@ -3,8 +3,8 @@
  * UserService
  *
  * @version    1.0
- * @date       21/04/2022
- * @author     João De Campos
+ * @date       04-05-2017
+ * @author     Rodrigo de Freitas
  * @copyright  Copyright (c) 2006-2014 Adianti Solutions Ltd. (http://www.adianti.com.br)
  * @license    http://www.adianti.com.br/framework-license
  */
@@ -149,7 +149,7 @@ class UserService
         $person = Person::where('email', '=', $email)
                         ->where('EXISTS', '', "NOESC: (SELECT bas_person_individual.person_id FROM bas_person_individual WHERE bas_person_individual.person_id = bas_person.id )")
                         ->get();
-
+                        
         if($person)
         {
             $person = $person[0];

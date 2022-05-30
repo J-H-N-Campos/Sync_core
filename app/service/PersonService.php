@@ -3,15 +3,15 @@
  * PersonService
  *
  * @version    1.0
- * @date       21/04/2022
- * @author     João de Campos
+ * @date       09/05/2022
+ * @author     João De Campos
  * @copyright  Copyright (c) 2006-2014 Adianti Solutions Ltd. (http://www.adianti.com.br)
  * @license    http://www.adianti.com.br/framework-license
  */
 
 class PersonService
 {
-    public static function create($param, $fl_create_user = false)
+    public static function create($param, $fl_return_data = false, $fl_create_user = false)
     {
         $person            = null;
         $person_individual = null;
@@ -52,61 +52,17 @@ class PersonService
             }
         }
 
-        //Validação do nome
-        $check_name = explode(" ", $param['name']);
-
+        if(!empty($param['company']) AND !empty($param['individual']))
+        {
+            throw new Exception("Dois tipos de pessoas não podem ser informados juntos");
+        }
+        
         //Se não tiver person, cria
         if(!$person)
         {
             $person = new Person();
         }
-
-        //Se for passado EMAIL
-        if(!empty($param['email']))
-        {
-            $email = TString::prepareEmail($param['email']);
-
-            //Valida email
-            $validator = new TEmailValidator();
-            $validator->validate('Email', $email); 
-
-            //Validação somente para fisica
-            if(!empty($param['individual']))
-            {
-                //Se a pessoa ja existe
-                if(!empty($person->id))
-                {
-                    //Verifica duplicação
-                    $person_verification = Person::where('email', '=', $email)
-                                                 ->where('id',    '!=', $person->id)
-                                                 ->where('EXISTS', '', "NOESC: (SELECT bas_person_individual.person_id FROM bas_person_individual WHERE bas_person_individual.person_id = bas_person.id )")
-                                                 ->get();
-                    if($person_verification)
-                    {
-                        throw new Exception("{$email} já está sendo usado por outra pessoa");
-                    }
-                }
-                else
-                {
-                    $person_verification = Person::where('email', '=', $email)
-                                                 ->where('EXISTS', '', "NOESC: (SELECT bas_person_individual.person_id FROM bas_person_individual WHERE bas_person_individual.person_id = bas_person.id )")
-                                                 ->get();
-
-                    if($person_verification)
-                    {
-                        $person  = $person_verification[0];
-                    }
-                }
-            }
-
-            //Add
-            $person->email = $email;
-        }
-        else
-        {
-            throw new Exception('O email é obrigatório');
-        }
-
+        
         //Validação para fisica
         if(!empty($param['individual']))
         {
@@ -213,7 +169,7 @@ class PersonService
                     if($person_validade)
                     {
                         throw new Exception("CNPJ {$cnpj} já está sendo usando por outra pessoa");
-                    }
+                    } 
                 }
             }
             //Para novo
@@ -234,12 +190,28 @@ class PersonService
             //Atribui
             $person_company->cnpj = $cnpj;
 
+            //Validação do owner
+            if(!empty($param['company']['owner_id']))
+            {
+                //Se ele ja tem
+                if(!empty($person_company->owner_id))
+                {
+                    //Verifica se é igual
+                    if(!$person->id AND $person_company->owner_id != $param['company']['owner_id'])
+                    {
+                        throw new Exception("CNPJ '{$cnpj}' já possui um dono cadastrado, portanto não pode ser usado por você");
+                    }
+                }
+
+                $person_company->owner_id   = $param['company']['owner_id'];
+            }
+
             if(!empty($param['company']['name_fantasy']))
             {
-                $person_company->name_fantasy  = $param['company']['name_fantasy'];
+                $person_company->name_fantasy   = $param['company']['name_fantasy'];
             }
         }
-        
+
         //Se for passado endereço
         if(isset($param['zip_code']))
         {
@@ -270,16 +242,100 @@ class PersonService
         {
             $person->name = $param['name'];
         }
+
+        if(!empty($param['email']))
+        {
+            //Valida email
+            $validator = new TEmailValidator();
+            $validator->validate('Email', $param['email']); 
+            
+            $person->email = TString::prepareEmail($param['email']);
+        }
+
+        //Se for passado EMAIL
+        if(!empty($param['email']))
+        {
+            //Valida email
+            $validator = new TEmailValidator();
+            
+            $validator->validate('Email', $param['email']); 
+
+            //Validação somente para fisica
+            if(!empty($param['person_individual']))
+            {
+                //Procura a pessoa com email
+                if(empty($person->id))
+                {
+                    $person_check = self::getByEmailType($param['email'], 'individual');
+
+                    if($person_check)
+                    {
+                        $person_check->name = $person->name;
+                        $person = $person_check;
+                    }
+                }
+                
+                $email_check = null;
+
+                //Email principal pessoa edição
+                if($person->id)
+                {
+                    //Verifica duplicação
+                    $email_check = Person::where('email',   '=', TString::prepareEmail($param['email']))
+                                             ->where('id',  '!=', $person->id)
+                                             //Somente na fisica
+                                             ->where('EXISTS',  '', "NOESC: (SELECT * FROM bas_person_individual WHERE bas_person_individual.person_id = bas_person.id)")
+                                             ->get();
+                    if($email_check)
+                    {
+                        $email_check = $email_check[0];
+                        
+                        if($email_check->id != $person->id)
+                        {
+                            throw new Exception("{$param['email']} não pertence a pessoa originalmente cadastrada");
+                        }
+                    }
+                }
+                else
+                {
+                    //Verifica duplicação
+                    $email_check = Person::where('email', '=', TString::prepareEmail($param['email']))
+                                             //Somente na fisica
+                                             ->where('EXISTS', '', "NOESC: (SELECT * FROM bas_person_individual WHERE bas_person_individual.person_id = bas_person.id)")
+                                             ->get();
+                }
+
+                if($email_check)
+                {
+                    throw new Exception("{$param['email']} já está sendo usado por outra pessoa");
+                }
+            }
+            else
+            {
+                //Procura a pessoa com email
+                if(empty($person->id))
+                {
+                    $person_check =  self::getByEmailType($param['email'], 'company');
+
+                    if($person_check)
+                    {
+                        $person_check->name = $person->name;
+                        $person = $person_check;
+                    }
+                }
+            }
+
+            //Add
+            $person->email = $param['email'];
+        }
+        else
+        {
+            throw new Exception('O e-mail é obrigatório');
+        }
         
         if(!empty($param['phone']))
         {
             $person->phone = TString::preparePhone($param['phone']);
-
-            //Valida
-            if(strlen($phone) != 11)
-            {
-                throw new Exception("Telefone {$phone} não está no padrão, precisa ter 9 dígitos (99)99999-9999");
-            }
         }
         
         if(isset($param['individual']['gender']))
@@ -290,70 +346,68 @@ class PersonService
         if(isset($param['complement']))
         {
             $person->complement = $param['complement'];
-        }
-        
-        if(!empty($param['cpf']))
-        {
-            $obj = PersonIndividual::where('cpf','=',$param['cpf'])->get();
-            
-            if($obj)
-            {
-                throw new Exception('Já existe um registro cadastrado com este CPF');
-            }
-            
-            $person_individual->cpf = $param['cpf'];    
-        }
-        
+        }        
+
         //Tipo
         $person->setIndividual($person_individual);
         $person->setCompany($person_company);
-        
+
         //Salva
         $person->store();
-                    
-        //criação do usuário
+        
+        //Cria o usuário
         if($fl_create_user)
-        { 
-            $param2         = [];
-            $param2['id']   = $person->id;
-
-            if(!empty($param['password']))
-            {
-                $param2['password'] = $param['password']; 
-            }
-
-            //Antes de criar, verifica se já não existe
-            $user = $person->getUser();
-            
-            //se não tem usuário ele cria
-            if(!$user)
-            {
-                $user = UserService::create($param2);
-            }
-
-            $objUser            = TObject::toStd($user);
-            $objUser->person    = $person->toStdClass();
-            
-            return $objUser;
+        {
+            $user = UserService::create(['id' => $person->id]);
         }
 
-        return $person->toStdClass();
+        if($fl_return_data)
+        {
+            if(!empty($user))
+            {
+                $objUser                   = $user;
+                $objUser->person           = $person;
+                $objUser->password_default = null;
+                
+                //Password default
+                if($user->password_default)
+                {
+                    $objUser->password_default = $user->password_default;
+                }
+                
+                return $objUser;
+            }
+            else
+            {
+                return $person;
+            }
+        }
+
+        return $person;
     }
     
     public static function getByCode($code)
     {
-        $person = Person::where('code','=', $code)->get();
-
-        if($person)
+        if($person = Person::where('code','=', $code)->get())
         {
+            $personStd = new StdClass();
+            
             $person = $person[0];
-            $user   = $person->getUser();
             
-            $objPerson       = $person->toStdClass();
-            $objPerson->user = TObject::toStd($user);
+            $personStd->person = TObject::toStd($person);
             
-            return $objPerson;
+            $individual = $person->getIndividual();
+            
+            $personStd->person->individual = TObject::toStd($individual);
+            
+            $user   = new User($person->id);
+            
+            $personStd->user = TObject::toStd($user);
+            
+            return $personStd;
         }
+        
+        return null;
     }
     
     public static function getByCpf($cpf)
@@ -420,6 +474,30 @@ class PersonService
         TTransaction::close();
 
         return $person;
+    }
+
+    public static function getByEmailType($email, $type)
+    {
+        $objPerson = Person::where('email', '=', strtolower(trim($email)))->get();
+
+        //Se tiver pessoa
+        if($objPerson)
+        {
+            foreach ($objPerson as $key => $person) 
+            {
+                //Se for fisica
+                if($type == 'individual' AND $person->person_individual)
+                {
+                    return $person;
+                }
+                elseif($type == 'company' AND $person->person_company)
+                {
+                    return $person;
+                }
+            }
+        }
+
+        return false;
     }
 }
 ?>
