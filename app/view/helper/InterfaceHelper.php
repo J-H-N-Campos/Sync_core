@@ -171,7 +171,7 @@ class InterfaceHelper
     {
         $screens_menu   = $user->getScreensMenu();
         $person         = $user->getPerson();
-        $url_imagem     = '../app/images/logounivates.png';
+        $url_imagem     = './images/logounivates.png';
         $operators       = UserService::getSession();
 
         $nav            = new TElement('div');
