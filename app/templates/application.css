@@ -211,7 +211,7 @@
     font-size: 16px;
 }
 .content-turma
-{''
+{
   background: #eee;
   width: 100%;
   padding: 12px;
@@ -2469,7 +2469,7 @@ div.color-div span.tcolor {
 }
 .entry-value-total
 {
-  color: var(--link-color);a
+  color: var(--link-color);
   font-size: 18px;
   font-weight: 600;
 }
