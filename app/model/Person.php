@@ -3,7 +3,7 @@
  * Person
  *
  * @version    1.0
- * @date       18/04/2022
+ * @date       09/05/2022
  * @author     João De Campos
  * @copyright  Copyright (c) 2006-2014 Adianti Solutions Ltd. (http://www.adianti.com.br)
  * @license    http://www.adianti.com.br/framework-license
@@ -34,9 +34,8 @@ class Person extends TRecord
         parent::addAttribute('city_id');
         parent::addAttribute('description');
         parent::addAttribute('complement');
-        parent::addAttribute('certificate');
     }
-
+    
     public function get_init_word_name()
     {
         return TString::getIniWordName($this->name);
@@ -47,18 +46,82 @@ class Person extends TRecord
         $this->person_individual = $obj;
     }
 
+    public function getUsers()
+    {
+        $users  = User::where('id', '=', $this->id)->get();
+        $array  = [];
+
+        if($users)
+        {
+            foreach ($users as $key => $user) 
+            {
+                $array[] = $users->getPerson();
+            }
+        }
+        
+        return $array;
+    }
+
+    public function getContracts()
+    {
+        return Contract::where('person_id', '=', $this->id)->get();
+    }
+
+    public function getContractsUsers()
+    {
+        $array  = [];
+        $users  = $this->getUsers();
+        
+        if($users)
+        {
+            foreach ($users as $key => $user) 
+            {
+                $contracts = $user->getContracts();
+
+                if($contracts)
+                {
+                    $contract               = $contracts[0];
+                    $array[$contract->id]   = $contract;
+                }
+            }
+        }
+    }
+
+    public function getArrayContractsUsers($fl_unic_on = false)
+    {
+        $contracts = $this->getContractsUsers();
+        $array     = [];
+
+        if($contracts)
+        {
+            foreach ($contracts as $key => $contract) 
+            {
+                if($fl_unic_on)
+                {
+                    if($contract->status == 'operating' OR $contract->status == 'wait_config' OR $contract->status == 'cancel')
+                    {
+                        $array[$contract->id] = $contract->description;
+                    }
+                }
+                else
+                {
+                    $array[$contract->id] = $contract->description;
+                }
+            }
+        }
+
+        return $array;
+    }
+
     public function getDocument()
     {
-        $individual = $this->getIndividual();
-        $company    = $this->getCompany();
-
-        if($company)
+        if($this->person_company)
         {
-            return TString::maskCnpj($company->cnpj);
+            return TString::maskCnpj($this->person_company->cnpj);
         }
-        elseif($individual)
+        elseif($this->person_individual)
         {
-            return TString::maskCpf($individual->cpf);
+            return TString::maskCpf($this->person_individual->cpf);
         }
     }
 
@@ -208,8 +271,6 @@ class Person extends TRecord
     {
         $this->prepareInformations();
         
-        $this->certificate = TArchive::move($this->certificate, 'repository/');
-
         parent::store();
 
         if($this->person_individual)
@@ -220,7 +281,8 @@ class Person extends TRecord
             //Para trocas
             PersonCompany::where('person_id', '=', $this->id)->delete();
         }
-        elseif($this->person_company)
+
+        if($this->person_company)
         {
             $this->person_company->person_id = $this->id;
             $this->person_company->store();
@@ -241,15 +303,14 @@ class Person extends TRecord
     {  
         $id = isset($id) ? $id : $this->id;
 
-        if($this->person_individual)
+        if($this->getUser())
         {
-            $this->person_individual->delete();
+            throw new Exception("Essa pessoa é um usuário. Por favor remova ela do grupo de usuários para depois deleta-lá");
         }
-        elseif($this->person_company)
-        {
-            $this->person_company->delete();
-        }
-        
+
+        PersonIndividual::where('person_id', '=', $id)->delete();
+        PersonCompany::where('person_id', '=', $id)->delete();
+
         parent::delete($id);   
     }
     
@@ -284,7 +345,7 @@ class Person extends TRecord
             }
             
             $user = UserService::create(['id' => $this->id]);
-            
+
             if(!$user)
             {
                 throw new Exception("Não foi possível criar usuário, verifica se o mesmo possui CPF"); 
@@ -365,23 +426,6 @@ class Person extends TRecord
                                 O seguintes problemas foram encontrados nesta senha:</br>
                                 $aviso");
         }
-    }
-
-    public function toStdClass()
-    {
-        $company = $this->getCompany();
-        $objPerson                    = TObject::toStd($this);
-        $objPerson->company           = TObject::toStd($company);
-        
-        if($objPerson->company)
-        {
-            $owner  = $company->getOwner();
-            $objPerson->company->owner  = $owner->toStdClass();
-        }
-
-        $objPerson->individual = TObject::toStd($this->getIndividual());
-
-        return $objPerson;
     }
 }
 ?>

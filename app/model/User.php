@@ -77,11 +77,20 @@ class User extends TRecord
 
         if($this->groups)
         {
-            foreach ($this->groups as $key => $group) 
+            foreach($this->groups as $key => $group) 
             {
                 $user_group            = new UserGroup();
                 $user_group->user_id   = $this->id;
-                $user_group->group_id  = $group->id;
+
+                if(empty($group->id))
+                {
+                    $user_group->group_id  = 2;
+                }
+                else
+                {
+                    $user_group->group_id  = $group->id;
+                }
+
                 $user_group->store();
             }
         }
