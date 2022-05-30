@@ -1,7 +1,7 @@
 
 <?php
 /**
- * TesteService
+ * TesteServiceAutomatizado
  *
  * @version    1.0
  * @date       23/05/2022
@@ -10,18 +10,18 @@
  * @license    http://www.adianti.com.br/framework-license
  */
 
-//php cmd.php "class=TestService&method=createPerson&static=1"
-//php cmd.php "class=TestService&method=getByEmailType&static=1"
-//php cmd.php "class=TestService&method=createUser&static=1"
-//php cmd.php "class=TestService&method=setSessionUser&static=1"
-//php cmd.php "class=TestService&method=getArrayCitys&static=1"
-//php cmd.php "class=TestService&method=createGroup&static=1"
-//php cmd.php "class=TestService&method=deleteGroup&static=1"
-//php cmd.php "class=TestService&method=editGroup&static=1"
-//php cmd.php "class=TestService&method=searchCity&static=1"
-//php cmd.php "class=TestService&method=getErrors&static=1"
+//php cmd.php "class=TesteServiceAutomatizado&method=createPerson&static=1"
+//php cmd.php "class=TesteServiceAutomatizado&method=getByEmailType&static=1"
+//php cmd.php "class=TesteServiceAutomatizado&method=createUser&static=1"
+//php cmd.php "class=TesteServiceAutomatizado&method=setSessionUser&static=1"
+//php cmd.php "class=TesteServiceAutomatizado&method=getArrayCitys&static=1"
+//php cmd.php "class=TesteServiceAutomatizado&method=createGroup&static=1"
+//php cmd.php "class=TesteServiceAutomatizado&method=deleteGroup&static=1"
+//php cmd.php "class=TesteServiceAutomatizado&method=editGroup&static=1"
+//php cmd.php "class=TesteServiceAutomatizado&method=searchCity&static=1"
+//php cmd.php "class=TesteServiceAutomatizado&method=getErrors&static=1"
 
-class TesteService
+class TesteServiceAutomatizado
 {
     public static function searchCity()
     {
