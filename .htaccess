@@ -1,0 +1,24 @@
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+ErrorDocument 404 /notfound
+
+#DEFAULT
+
+RewriteRule ^recuperar-([0-z]+)$    index.php?class=RecoverDefineForm&key=$1  [QSA]
+RewriteRule ^facebook$              facebook.php [QSA]
+RewriteRule ^google-autorization$   index.php?class=GoogleAutorization [QSA]
+RewriteRule ^login$                 index.php?class=LoginForm [QSA]
+
+#ROTAS DINAMICAS
+                   
+RewriteRule ^config$    rest.php?class=ConfigService [QSA]
+RewriteRule ^area$    rest.php?class=AreaService [QSA]
+RewriteRule ^user$    rest.php?class=UserService [QSA]
+RewriteRule ^person$    rest.php?class=PersonService [QSA]
+RewriteRule ^subarea$    rest.php?class=SubareaService [QSA]
+RewriteRule ^plan$    rest.php?class=PlanService [QSA]
+RewriteRule ^professional$    rest.php?class=ProfessionalService [QSA]
+RewriteRule ^schedule$    rest.php?class=ScheduleService [QSA]
+RewriteRule ^url$    rest.php?class=UrlService [QSA]
+RewriteRule ^reserve$    rest.php?class=ReserveService [QSA]

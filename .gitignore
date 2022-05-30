@@ -1,0 +1,47 @@
+## ARQUIVOS
+*.com
+*.dll
+*.exe
+*.o
+*.so
+*.c9
+*app/config/*.ini
+sw.js
+.htaccess
+
+## PACOTES
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+ 
+# Logs
+*.log
+*.sqlite
+
+# Diretorios
+arquivos/*
+app/config/*
+tmp/*
+pdf/*
+repository/*
+app/database/updateDbs.sql
+hosts/*
+vendor/* 
+app/lib/adwork2
+lib/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.bak
+app/lib/api/

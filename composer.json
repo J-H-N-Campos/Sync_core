@@ -10,6 +10,8 @@
         "phpoffice/phpspreadsheet": "^1.18",
         "picqer/php-barcode-generator": "^0.2.2",
         "bacon/bacon-qr-code": "^1.0",
-        "rapidwebltd/php-google-people-api": "^1.0"
+        "rapidwebltd/php-google-people-api": "^1.0",
+        "robmorgan/phinx": "^0.12.10",
+        "phpunit/phpunit": "^9"
     }
 }
