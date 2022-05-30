@@ -4,7 +4,7 @@
  * PersonList
  *
  * @version    1.0
- * @date       18/04/2022
+ * @date       09/05/2022
  * @author     João De Campos
  * @copyright  Copyright (c) 2006-2014 Adianti Solutions Ltd. (http://www.adianti.com.br)
  * @license    http://www.adianti.com.br/framework-license
@@ -40,8 +40,8 @@ class PersonList extends TPage
             
             //Busca - Entradas
             $phone          = new TEntry('phone');
-            $id             = new TDBUniqueSearch('id',         $this->db,  'Person', 'id', 'name', 'name');
-            $group_id       = new TDBUniqueSearch('group_id',   $this->db,  'Group',  'id', 'name', 'name');
+            $id             = new TDBUniqueSearch('id',         $this->db,  'Person',   'id', 'name',   'name');
+            $group_id       = new TDBUniqueSearch('group_id',   $this->db,  'Group',    'id', 'name',   'name');
 
             $id->setMinLength(0);
             $id->disableIdSearch();
@@ -49,11 +49,12 @@ class PersonList extends TPage
             $id->setOperator('ilike');
             $id->setService('AdiantiMultiSearchServiceAccent');
             $group_id->setMinLength(0);
+            $phone->setMask('99999999999');
 
             //Busca - Formulário
-            $this->form->addTab('Dados',    'mdi mdi-chart-donut');
-            $this->form->addFieldLine($id,     'Pessoa',    [400, null]);
-            $this->form->addFieldLine($phone,  'Telefone',  [250, null]);
+            $this->form->addTab('Dados', 'mdi mdi-chart-donut');
+            $this->form->addFieldLine($id,      'Pessoa',    [600, null]);
+            $this->form->addFieldLine($phone,   'Telefone',  [120, null]);
             
             //Aba Usuário
             $this->form->addTab('Usuário',  'mdi mdi-account');
@@ -78,22 +79,22 @@ class PersonList extends TPage
 
             $this->datagrid->addColumnReduced('dt_register',    'mdi mdi-calendar-text',            ['TDateService',    'timeStampToBr'],   'Data do cadastro');
             $this->datagrid->addColumnReduced('dt_update',      'mdi mdi-calendar-sync-outline',    ['TDateService',    'timeStampToBr'],   'Última atualização');
-            $this->datagrid->addColumnReduced('code',           'mdi mdi-qrcode',                   null, 'Código');
 
-            $this->datagrid->addColumn('id',    'Id', [$this, 'getId']);
-            $this->datagrid->addColumn('name',  'Nome');
-            $this->datagrid->addColumn('email', 'E-mail');
-            $this->datagrid->addColumn('phone', 'Telefone');
-            $this->datagrid->addColumn('name',  'Tipo', [$this, 'getType']);
+            $this->datagrid->addColumn('id',         'Id',      [$this, 'getId']);
+            $this->datagrid->addColumn('name',       'Nome');
+            $this->datagrid->addColumn('email',      'Email');
+            $this->datagrid->addColumn('phone',      'Telefone');
+            $this->datagrid->addColumn('name',       'Tipo',    [$this, 'getType']);
 
             $this->datagrid->addGroupAction('mdi mdi-dots-vertical');
-            $this->datagrid->addGroupActionButton('Editar',             'mdi mdi-pencil',           [$this->parent, 'onEdit'],   false,  'code');
+            $this->datagrid->addGroupActionButton('Editar',             'mdi mdi-pencil',           [$this->parent,    'onEdit'],   false,  'code');
             $this->datagrid->addGroupActionButton('Criar usuário',      'mdi mdi-account-plus',     [$this, 'onCreateUser']);
-            
+            $this->datagrid->addGroupActionButton('Deletar',            'mdi mdi-delete',           [$this, 'onDelete']);
+
             //grupos de botões secundários
             $this->datagrid->addGroupAction('mdi mdi-account-circle');
-            $this->datagrid->addGroupActionButton('Editar acesso',      'mdi mdi-account-edit',     ['UserForm', 'onEdit',   ['return' => 'PersonList']]);
-            $this->datagrid->addGroupActionButton('Remover',            'mdi mdi-account-minus',    [$this, 'onRemoveUser']);
+            $this->datagrid->addGroupActionButton('Editar acesso',      'mdi mdi-account-edit',     ['UserForm',    'onEdit',   ['return' => 'PersonList']]);
+            $this->datagrid->addGroupActionButton('Remover',            'mdi mdi-account-minus',    [$this,         'onRemoveUser']);
             
             //Nevegação
             $this->page_navigation = new TPageNavigation;
@@ -108,7 +109,7 @@ class PersonList extends TPage
             $page_box->add($this->form);
             $page_box->add($this->datagrid);
             $page_box->add($this->page_navigation);
- 
+            
             parent::add($page);
         }
         catch (Exception $e) 
@@ -145,7 +146,7 @@ class PersonList extends TPage
         
         if($data->group_id)
         {
-            $filters[]  = new TFilter('EXISTS', '', "NOESC: (SELECT * FROM sys_user_group where sys_user_group.user_id = bas_person.id and sys_user_group.group_id = {$data->group_id})");
+            $filters[]  = new TFilter('EXISTS',     '',     "NOESC: (SELECT * FROM sys_user_group where sys_user_group.user_id = bas_person.id and sys_user_group.group_id = {$data->group_id})");
         }
 
         //Registra o filtro na sessão
@@ -294,8 +295,8 @@ class PersonList extends TPage
             TTransaction::close();
 
             $notify = new TNotify('Sucesso', 'Operação foi realizada');
-            $notify->setAutoRedirect([$this, 'onReload']);
             $notify->enableNote();
+            $notify->setAutoRedirect([$this,'onReload']);
             $notify->show();
         }
         catch (Exception $e)
@@ -395,8 +396,8 @@ class PersonList extends TPage
             TTransaction::close();
 
             $notify = new TNotify('Sucesso', 'Operação foi realizada');
-            $notify->setAutoRedirect([$this, 'onReload']);
             $notify->enableNote();
+            $notify->setAutoRedirect([$this,'onReload']);
             $notify->show();
         }
         catch (Exception $e)
@@ -432,8 +433,8 @@ class PersonList extends TPage
             TTransaction::close();
 
             $notify = new TNotify('Sucesso', 'Operação foi realizada');
-            $notify->setAutoRedirect([$this, 'onReload']);
             $notify->enableNote();
+            $notify->setAutoRedirect([$this,'onReload']);
             $notify->show();
         }
         catch (Exception $e)
@@ -485,10 +486,8 @@ class PersonList extends TPage
 
             if(!empty($param['key']))
             {
-                $par       = [];
-                $par['id'] = $param['key'];
-
-                $user = UserService::create($par);
+                $object = new $this->model($param['key']);
+                $object->createUser();
             }
             else
             {
@@ -498,8 +497,8 @@ class PersonList extends TPage
             TTransaction::close();
 
             $notify = new TNotify('Sucesso', 'Operação foi realizada');
-            $notify->setAutoRedirect([$this, 'onReload']);
             $notify->enableNote();
+            $notify->setAutoRedirect([$this,'onReload']);
             $notify->show();
         }
         catch (Exception $e)

@@ -1,15 +1,19 @@
 <?php
+
+use Adianti\Widget\Form\THidden;
+use Adianti\Widget\Wrapper\TDBUniqueSearch;
+
 /**
- * ScreenForm
+ * ProductForm
  *
  * @version    1.0
- * @date       18/04/2022
+ * @date       20/05/2022
  * @author     João De Campos
  * @copyright  Copyright (c) 2006-2014 Adianti Solutions Ltd. (http://www.adianti.com.br)
  * @license    http://www.adianti.com.br/framework-license
  */
  
-class ScreenForm extends TCurtain
+class ProductForm extends TCurtain
 {
     protected $form; 
     private   $db;
@@ -18,52 +22,45 @@ class ScreenForm extends TCurtain
     /**
      * Classe construtora
      */
-    function __construct($param = null)
+    function __construct()
     {
         try
         {
-            parent::__construct($param);
+            parent::__construct();
             
-            //Definições de conexão
+            //Definições d  e conexão
             $this->db       = 'sync';
-            $this->model    = 'Screen';
-            $this->parent   = "ScreenList";
-            
-            parent::setActionClose([$this->parent]);
+            $this->model    = 'Product';
+            $this->parent   = "ProductList";
 
             //Cria a form
-            $this->form     = new TFormStruct('screen_form');
+            $this->form = new TFormStruct('product_form');
+
+            //Ação do close
+            parent::setActionClose([$this->parent]);
             
             //Entradas
             $id             = new TEntry('id');
             $name           = new TEntry('name');
-            $controller     = new TEntry('controller');
-            $icon           = new TEntry('icon');
-            $menu_id        = new TDBCombo('menu_id', $this->db, 'Menu',  'id', 'name', 'name');
-            $fl_view_menu   = new TSwitch('fl_view_menu');
-            $fl_public      = new TSwitch('fl_public');
-            $groups_id      = new TDBOption('groups_id', $this->db, 'Group', 'id', 'name', 'name');
-
-            //atributos
-            $groups_id->enableMultipleCheck();
-            $groups_id->setBoxSize(130);
+            $bar_code       = new TEntry('bar_code');
+            $category_id    = new TDBUniqueSearch('category_id', $this->db, 'ProductCategory', 'id', 'name');
+            $price          = new TNumeric('price', 2,',','.');
+            $path           = new TArchive('path');
+            $user_id        = new THidden('user_id');
 
             //Propriedades das entradas
             $id->setEditable(false);
-
+            $category_id->setMinLength(0);
+            
             //Monta o formulário
             $this->form->addTab('Formulário', 'mdi mdi-filter-outline');
-            $this->form->addFieldLine($id,              'Código',           [80,  null]);
-            $this->form->addFieldLine($name,            'Nome',             [400, null], true);
-            $this->form->addFieldLine($controller,      'Controladora',     [400, null], true);
-            $this->form->addFieldLine($icon,            'Ícone',            [300, null], true);
-            $this->form->addFieldLine($menu_id,         'Menu',             [250, null], true);
-            $this->form->addFieldLine($fl_view_menu,    'No menu');
-            $this->form->addFieldLine($fl_public,       'Público');
-            
-            //separador
-            $this->form->addSeparator('Adicionar ao grupo', 'mdi mdi-account-group');
-            $this->form->addFieldLine($groups_id,   'Grupos');
+            $this->form->addFieldLine($id,          'Id',               [80,  null]);
+            $this->form->addFieldLine($name,        'Nome',             [350, null], true,  false, 1);
+            $this->form->addFieldLine($bar_code,    'Código de barra',  [200, null], false, false, 1);
+            $this->form->addFieldLine($category_id, 'Categoria',        [200, null], false, false, 2);
+            $this->form->addFieldLine($price,       'Preço',            [100, null], true,  false, 2);
+            $this->form->addFieldLine($path,        'Arquivo',          [200, null], false, false, 1);
+            $this->form->addFieldLine($user_id);
 
             //Botões de ações
             $button = new TButtonPress('Gravar', 'mdi mdi-content-save-settings');
@@ -78,7 +75,7 @@ class ScreenForm extends TCurtain
             $this->form->generate();
             
             //Estrutura da pagina
-            $page     = new TPageContainer();
+            $page = new TPageContainer();
             $page_box = $page->createBox(false);
             $page_box->add(ScreenHelper::getHeader(__CLASS__));
             $page_box->add($this->form);
@@ -92,6 +89,8 @@ class ScreenForm extends TCurtain
             $notify = new TNotify('Ops! Algo deu errado!', $e->getMessage());
             $notify->setIcon('mdi mdi-close');
             $notify->show();
+            
+            TTransaction::rollback();
         } 
     }
 
@@ -108,39 +107,15 @@ class ScreenForm extends TCurtain
             //Validação
             $this->form->validate();
             
+            //pega o usuário da sessão
+            $user = UserService::getSession();
+
             //Recupera dados do Post;
             $data = $this->form->getData($this->model);
+            $data->user_id = $user->id;
             
             //Grava
             $data->store();
-
-            //Groups
-            if($data->groups_id)
-            {
-                $group_screens = Group::getGroupsByScreen($data->id);
-                $adds          = [];
-
-                foreach ($data->groups_id as $key => $group_id) 
-                {
-                    $group = new Group($group_id);
-                    $group->addScreen(new Screen($data->id));
-                    $group->store();
-
-                    $adds[$group->id] = true;
-                }
-
-                //Descobre qual foi removida
-                if($group_screens)
-                {
-                    foreach ($group_screens as $key => $group) 
-                    {
-                        if(!isset($adds[$group->id]))
-                        {
-                            GroupScreen::where('screen_id', '=', $data->id)->where('group_id', '=', $group->id)->delete();
-                        }
-                    }
-                }
-            }
 
             TTransaction::close();
            
@@ -180,20 +155,6 @@ class ScreenForm extends TCurtain
                 TTransaction::open($this->db);
                 
                 $object = new $this->model($key);
-
-                $object->groups_id = Group::getGroupsByScreen($object->id);
-
-                if($object->groups_id)
-                {
-                    $array = [];
-
-                    foreach ($object->groups_id as $key => $group) 
-                    {
-                        $array[$group->id] = $group->id;
-                    }
-
-                    $object->groups_id = $array;
-                }
 
                 $this->form->setData($object);
                 

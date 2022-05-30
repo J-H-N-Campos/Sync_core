@@ -51,10 +51,10 @@ class UserForm extends TCurtain
             $criteria2->add(new TFilter('fl_on', '=', 't'));
 
             //Entradas
-            $id                 = new TDBUniqueSearch('id',             $this->db, 'Person',    'id', 'name',   'name',     $criteria);
-            $groups_id          = new TOption('groups_id');
-            $fl_on              = new TSwitch('fl_on');
-            $pip_code           = new TEntry('pip_code');
+            $id         = new TDBUniqueSearch('id', $this->db, 'Person', 'id', 'name', 'name', $criteria);
+            $groups_id  = new TOption('groups_id');
+            $fl_on      = new TSwitch('fl_on');
+            $pip_code   = new TEntry('pip_code');
             
             //Funções das entradas
             $id->setMinLength(0);
@@ -68,7 +68,7 @@ class UserForm extends TCurtain
             $groups_id->setBoxSize(110);
             
             //Monta o formulário
-            $this->form->addTab('Dados');
+            $this->form->addTab('Formulário', 'mdi mdi-filter-outline');
             $this->form->addFieldLine($id,              'Pessoa',           [450, null]);
             $this->form->addFieldLine($pip_code,        'Pip Code',         [450, null]);
             $this->form->addFieldLine($groups_id,       'Grupos de acesso', [700, null]);

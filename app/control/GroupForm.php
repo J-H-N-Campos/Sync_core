@@ -49,8 +49,9 @@ class GroupForm extends TCurtain
             $screens_id->setBoxSize(200);
             
             //Monta o formulário
-            $this->form->addFieldLine($id,          'Código',           [80,  null]);
-            $this->form->addFieldLine($name,        'Nome',             [350, null], true);
+            $this->form->addTab('Formulário', 'mdi mdi-filter-outline');
+            $this->form->addFieldLine($id,          'Id',   [80,  null]);
+            $this->form->addFieldLine($name,        'Nome', [350, null], true);
             $this->form->addFieldLine($fl_admin,    'Administrador');
             $this->form->addFieldLine($screens_id,  'Telas');
 

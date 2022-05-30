@@ -32,10 +32,14 @@ class RecoveryForm  extends TPage
             $this->form = new TFormStruct();
             $this->form->setAligh('center');
             
+            $url_imagem = "./images/logounivates.png";
+
             //Entradas
             $email = new TEntry('email');
             
             //Monta o formulário
+            $this->form->addFieldLine("<div class='logo-login'><img src='{$url_imagem}'></div>");
+            $this->form->addFieldLine("<b>Sistema Sync</b>");
             $this->form->addFieldLine($email, 'Seu E-mail',  [450, null]);
 
             $content_buttons = new TElement('div');

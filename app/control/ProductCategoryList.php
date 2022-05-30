@@ -1,16 +1,19 @@
 <?php
 
+use Adianti\Widget\Form\TNumeric;
+use Adianti\Widget\Wrapper\TDBUniqueSearch;
+
 /**
- * MenuList
+ * ProductCategoryList
  *
  * @version    1.0
- * @date       18/04/2022
+ * @date       20/05/2022
  * @author     João De Campos
  * @copyright  Copyright (c) 2006-2014 Adianti Solutions Ltd. (http://www.adianti.com.br)
  * @license    http://www.adianti.com.br/framework-license
  */
  
-class MenuList extends TPage
+class ProductCategoryList extends TPage
 {
     private $loaded;
     private $datagrid;
@@ -31,19 +34,19 @@ class MenuList extends TPage
             
             //Definições de conexão
             $this->db     = 'sync';
-            $this->model  = 'Menu';
-            $this->parent = 'MenuForm';
+            $this->model  = 'ProductCategory';
+            $this->parent = 'ProductCategoryForm';
             
             //Busca - Cria a form
             $this->form = new TFormStruct();
             $this->form->enablePostSession($this->model);
             
             //Busca - Entradas
-            $name   = new TEntry('name');
-        
+            $name = new TEntry('name');
+
             //Busca - Formulário
             $this->form->addTab('Dados', 'mdi mdi-chart-donut');
-            $this->form->addFieldLine($name,  'Nome', [300, null]);
+            $this->form->addFieldLine($name, 'Nome', [300, null]);
 
             //Busca - Ações
             $button = new TButtonPress('Filtrar', 'mdi mdi-filter');
@@ -62,16 +65,16 @@ class MenuList extends TPage
             $this->datagrid->setConfig(false);
             $this->datagrid->setDb($this->db);
             
-            $this->datagrid->addColumn('id',         'Id');
-            $this->datagrid->addColumn('name',       'Nome');
-            $this->datagrid->addColumn('icon',       'Ícone',   ['Menu', 'getIcon']);
-            $this->datagrid->addColumn('sequence',   'Sequência');
+            $this->datagrid->addColumnReduced('dt_register',  'mdi mdi-calendar-blank', ['TDateService', 'timeStampToBr'], 'Data de registro');
+
+            $this->datagrid->addColumn('id',    'Id');
+            $this->datagrid->addColumn('name',  'Nome');
 
             //Ações
             $this->datagrid->addGroupAction('mdi mdi-dots-vertical');
-            $this->datagrid->addGroupActionButton('Editar',  'mdi mdi-pencil', [$this->parent,  'onEdit']);
+            $this->datagrid->addGroupActionButton('Editar',  'mdi mdi-pencil', [$this->parent, 'onEdit']);
             $this->datagrid->addGroupActionButton('Deletar', 'mdi mdi-delete', [$this, 'onDelete']);
- 
+
             //Nevegação
             $this->page_navigation = new TPageNavigation;
             $this->page_navigation->setAction(new TAction([$this, 'onReload']));
@@ -79,7 +82,7 @@ class MenuList extends TPage
             $this->datagrid->setPageNavigation($this->page_navigation);
             
             //Estrutura da pagina
-            $page     = new TPageContainer();
+            $page = new TPageContainer();
             $page_box = $page->createBox(false);
             $page_box->add(ScreenHelper::getHeader(__CLASS__));
             $page_box->add($this->form);
@@ -168,7 +171,7 @@ class MenuList extends TPage
             if ($objects)
             {
                 //Percorre os resultados
-                foreach ($objects as $object)
+                foreach($objects as $object)
                 {
                     $this->datagrid->addItem($object);
                 }

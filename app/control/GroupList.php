@@ -42,6 +42,7 @@ class GroupList extends TPage
             $name   = new TEntry('name');
         
             //Busca - Formulário
+            $this->form->addTab('Dados', 'mdi mdi-chart-donut');
             $this->form->addFieldLine($name,  'Nome', [300, null]);
 
             //Busca - Ações
@@ -61,14 +62,14 @@ class GroupList extends TPage
             $this->datagrid->setConfig(false);
             $this->datagrid->setDb($this->db);
             
-            $this->datagrid->addColumn('id',    'Id',   null,   60);
+            $this->datagrid->addColumn('id',    'Id');
             $this->datagrid->addColumn('name',  'Nome');
 
             //Ações
             $this->datagrid->addGroupAction('mdi mdi-dots-vertical');
             $this->datagrid->addGroupActionButton('Editar',     'mdi mdi-pencil',       [$this->parent, 'onEdit']);
-            $this->datagrid->addGroupActionButton('Deletar',    'mdi mdi-delete',       [$this,         'onDelete']);
-            $this->datagrid->addGroupActionButton('Clonar',     'mdi mdi-content-copy', [$this,         'clone']);
+            $this->datagrid->addGroupActionButton('Deletar',    'mdi mdi-delete',       [$this, 'onDelete']);
+            $this->datagrid->addGroupActionButton('Clonar',     'mdi mdi-content-copy', [$this, 'clone']);
 
             //Nevegação
             $this->page_navigation = new TPageNavigation;

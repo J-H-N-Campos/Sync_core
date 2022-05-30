@@ -1,16 +1,19 @@
 <?php
 
+use Adianti\Widget\Form\TNumeric;
+use Adianti\Widget\Wrapper\TDBUniqueSearch;
+
 /**
- * MenuList
+ * ProductList
  *
  * @version    1.0
- * @date       18/04/2022
+ * @date       19/05/2022
  * @author     João De Campos
  * @copyright  Copyright (c) 2006-2014 Adianti Solutions Ltd. (http://www.adianti.com.br)
  * @license    http://www.adianti.com.br/framework-license
  */
  
-class MenuList extends TPage
+class ProductList extends TPage
 {
     private $loaded;
     private $datagrid;
@@ -31,19 +34,28 @@ class MenuList extends TPage
             
             //Definições de conexão
             $this->db     = 'sync';
-            $this->model  = 'Menu';
-            $this->parent = 'MenuForm';
+            $this->model  = 'Product';
+            $this->parent = 'ProductForm';
             
             //Busca - Cria a form
             $this->form = new TFormStruct();
             $this->form->enablePostSession($this->model);
             
             //Busca - Entradas
-            $name   = new TEntry('name');
-        
+            $name           = new TEntry('name');
+            $bar_code       = new TEntry('bar_code');
+            $category_id    = new TDBUniqueSearch('category_id', $this->db, 'ProductCategory', 'id', 'name');
+            $path           = new TArchive('path');
+            $price          = new TNumeric('price', 2,',','.');
+
+            //propriedades
+            $category_id->setMinLength(0);
+
             //Busca - Formulário
             $this->form->addTab('Dados', 'mdi mdi-chart-donut');
-            $this->form->addFieldLine($name,  'Nome', [300, null]);
+            $this->form->addFieldLine($name,        'Nome',             [300, null]);
+            $this->form->addFieldLine($bar_code,    'Código de barras', [300, null], false, false, 1);
+            $this->form->addFieldLine($category_id, 'Categoria',        [300, null], false, false, 1);
 
             //Busca - Ações
             $button = new TButtonPress('Filtrar', 'mdi mdi-filter');
@@ -62,16 +74,20 @@ class MenuList extends TPage
             $this->datagrid->setConfig(false);
             $this->datagrid->setDb($this->db);
             
-            $this->datagrid->addColumn('id',         'Id');
-            $this->datagrid->addColumn('name',       'Nome');
-            $this->datagrid->addColumn('icon',       'Ícone',   ['Menu', 'getIcon']);
-            $this->datagrid->addColumn('sequence',   'Sequência');
+            $this->datagrid->addColumnReduced('dt_register',  'mdi mdi-calendar-blank', ['TDateService', 'timeStampToBr'], 'Data de registro');
+            
+            $this->datagrid->addColumn('id',            'Id');
+            $this->datagrid->addColumn('name',          'Nome');
+            $this->datagrid->addColumn('bar_code',      'Código de barras');
+            $this->datagrid->addColumn('category_id',   'Categoria');
+            $this->datagrid->addColumn('path',          'Foto', ['TArchive', 'getDisplay']);
+            $this->datagrid->addColumn('price',         'Preço');
 
             //Ações
             $this->datagrid->addGroupAction('mdi mdi-dots-vertical');
-            $this->datagrid->addGroupActionButton('Editar',  'mdi mdi-pencil', [$this->parent,  'onEdit']);
+            $this->datagrid->addGroupActionButton('Editar',  'mdi mdi-pencil', [$this->parent, 'onEdit']);
             $this->datagrid->addGroupActionButton('Deletar', 'mdi mdi-delete', [$this, 'onDelete']);
- 
+
             //Nevegação
             $this->page_navigation = new TPageNavigation;
             $this->page_navigation->setAction(new TAction([$this, 'onReload']));
@@ -79,7 +95,7 @@ class MenuList extends TPage
             $this->datagrid->setPageNavigation($this->page_navigation);
             
             //Estrutura da pagina
-            $page     = new TPageContainer();
+            $page = new TPageContainer();
             $page_box = $page->createBox(false);
             $page_box->add(ScreenHelper::getHeader(__CLASS__));
             $page_box->add($this->form);
@@ -113,6 +129,16 @@ class MenuList extends TPage
         if($data->name)
         {
             $filters[]  = new TFilter('name', ' ILIKE ', "NOESC: '%$data->name%'");
+        }
+
+        if($data->category_id)
+        {
+            $filters[]  = new TFilter('category_id', ' = ', $data->category_id);
+        }
+
+        if($data->bar_code)
+        {
+            $filters[]  = new TFilter('bar_code', ' = ', $data->bar_code);
         }
         
         //Registra o filtro na sessão
@@ -168,8 +194,17 @@ class MenuList extends TPage
             if ($objects)
             {
                 //Percorre os resultados
-                foreach ($objects as $object)
+                foreach($objects as $object)
                 {
+                    $product_category = $object->getCategory();
+
+                    if(!empty($object->category_id))
+                    {
+                        $object->category_id = $product_category->name;
+                    }
+
+                    $object->price = TCoin::toBr($object->price);
+
                     $this->datagrid->addItem($object);
                 }
             }

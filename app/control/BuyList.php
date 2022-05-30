@@ -1,16 +1,19 @@
 <?php
 
+use Adianti\Database\TTransaction;
+use Adianti\Widget\Wrapper\TDBUniqueSearch;
+
 /**
- * MenuList
+ * BuyList
  *
  * @version    1.0
- * @date       18/04/2022
+ * @date       23/05/2022
  * @author     João De Campos
  * @copyright  Copyright (c) 2006-2014 Adianti Solutions Ltd. (http://www.adianti.com.br)
  * @license    http://www.adianti.com.br/framework-license
  */
  
-class MenuList extends TPage
+class BuyList extends TPage
 {
     private $loaded;
     private $datagrid;
@@ -23,55 +26,68 @@ class MenuList extends TPage
      * Classe contrutora
      * 
      */
-    public function __construct()
+    public function __construct($param = null)
     {
         try
         {
-            parent::__construct();
+            parent::__construct($param);
             
             //Definições de conexão
             $this->db     = 'sync';
-            $this->model  = 'Menu';
-            $this->parent = 'MenuForm';
+            $this->model  = 'Product';
             
             //Busca - Cria a form
             $this->form = new TFormStruct();
             $this->form->enablePostSession($this->model);
             
             //Busca - Entradas
-            $name   = new TEntry('name');
-        
+            $category_id    = new TDBUniqueSearch('category_id', $this->db, 'ProductCategory', 'id', 'name');
+            $name           = new TEntry('name');
+
+            //propriedades
+            $category_id->setMinLength(0);
+
             //Busca - Formulário
-            $this->form->addTab('Dados', 'mdi mdi-chart-donut');
-            $this->form->addFieldLine($name,  'Nome', [300, null]);
+            $this->form->addTab('Filtros','mdi mdi-filter-outline');
+            $this->form->addFieldLine($name,        'Nome',         [350, null]);
+            $this->form->addFieldLine($category_id, 'Categoria',    [350, null]);
 
             //Busca - Ações
             $button = new TButtonPress('Filtrar', 'mdi mdi-filter');
             $button->setAction([$this, 'onSearch']);
-            $this->form->addButton($button);
-
-            $button = new TButtonPress('Novo', 'mdi mdi-plus');
-            $button->setAction([$this->parent, 'onEdit']);
-            $this->form->addButton($button);
-
-            //Busca - Gera a forma
-            $this->form->generate();
+            $this->form->addButton($button);           
             
             //Cria datagrid
-            $this->datagrid = new TDataGridResponsive;
-            $this->datagrid->setConfig(false);
-            $this->datagrid->setDb($this->db);
-            
-            $this->datagrid->addColumn('id',         'Id');
-            $this->datagrid->addColumn('name',       'Nome');
-            $this->datagrid->addColumn('icon',       'Ícone',   ['Menu', 'getIcon']);
-            $this->datagrid->addColumn('sequence',   'Sequência');
+            $this->datagrid = new TCardDataGrid;
+            $this->datagrid->setMaxSize(200); 
 
-            //Ações
-            $this->datagrid->addGroupAction('mdi mdi-dots-vertical');
-            $this->datagrid->addGroupActionButton('Editar',  'mdi mdi-pencil', [$this->parent,  'onEdit']);
-            $this->datagrid->addGroupActionButton('Deletar', 'mdi mdi-delete', [$this, 'onDelete']);
- 
+            $user = UserService::getSession();
+
+            $this->form->addFieldLine("<b>Registre-se ou faça login para poder adquirir os produtos</b>");
+            $this->datagrid->addColumn('category_id',   'Categoria');
+            $this->datagrid->addColumn('name',          'Nome');
+            $this->datagrid->addColumn('price',         'Preço');
+            $this->datagrid->addColumn('path',          'Foto');
+
+            if(!empty($user->id))
+            {
+                $this->datagrid->createActionGroup();
+                $this->datagrid->addActionButton('Adquirir produto', 'mdi mdi-chart-ppf', ['BuyForm', 'onEdit'], ['id']);
+            }
+            else
+            {
+                $button = new TButtonPress('Criar conta', 'mdi mdi-account-plus');
+                $button->setAction(['RegisterAccount']);
+                $this->form->addButton($button);
+
+                $button = new TButtonPress('Login', 'mdi mdi-account');
+                $button->setAction(['LoginForm2']);
+                $this->form->addButton($button);
+            }
+            
+            //Busca - Gera a forma
+            $this->form->generate();
+
             //Nevegação
             $this->page_navigation = new TPageNavigation;
             $this->page_navigation->setAction(new TAction([$this, 'onReload']));
@@ -95,8 +111,6 @@ class MenuList extends TPage
             $notify = new TNotify('Ops! Algo deu errado!', $e->getMessage());
             $notify->setIcon('mdi mdi-close');
             $notify->show();
-            
-            TTransaction::rollback();
         }
     } 
     
@@ -110,6 +124,11 @@ class MenuList extends TPage
         $session_name   = $this->form->getPostSessionName();
         $filters        = [];
 
+        if($data->category_id)
+        {
+            $filters[]  = new TFilter('category_id', ' = ', $data->category_id);
+        }
+        
         if($data->name)
         {
             $filters[]  = new TFilter('name', ' ILIKE ', "NOESC: '%$data->name%'");
@@ -132,6 +151,8 @@ class MenuList extends TPage
         try
         {
             TTransaction::open($this->db);
+            
+            $user = UserService::getSession();
 
             //Cria filtros
             $criteria = new TCriteria;
@@ -147,7 +168,7 @@ class MenuList extends TPage
             //Define ordenação e limite da pagina
             $criteria->setProperties($param);
             $criteria->setProperty('limit', $limit);
-                
+
             //Sessão de filtros da form
             $session_name = $this->form->getPostSessionName();
     
@@ -170,6 +191,19 @@ class MenuList extends TPage
                 //Percorre os resultados
                 foreach ($objects as $object)
                 {
+                    $object->price  = TCoin::toBr($object->price);
+                    $category       = $object->getCategory();
+
+                    if(!empty($object->category_id))
+                    {
+                        $object->category_id = $category->name;
+                    }
+
+                    if(!empty($object->path))
+                    {
+                        $object->path = TArchive::getDisplay($object->path);
+                    }
+                    
                     $this->datagrid->addItem($object);
                 }
             }
@@ -179,6 +213,9 @@ class MenuList extends TPage
             $this->page_navigation->setProperties($param);
             $this->page_navigation->setLimit($limit);
             $this->loaded = true;
+
+            //Gera a datagrid
+            $this->datagrid->generate();
             
             TTransaction::close();
         }
@@ -193,65 +230,7 @@ class MenuList extends TPage
             TTransaction::rollback();
         }
     }
-    
-    /**
-     * Method onDelete()
-     * Executa uma confirmação se tem ou não certeza antes de deletar
-     * 
-     */
-    function onDelete($param)
-    {
-        //Ação de delete
-        $action = new TAction([$this, 'delete']);
-        $action->setParameters($param);
-        
-        //Pergunta
-        $notify = new TNotify('Apagar registro', 'Você tem certeza que quer apagar este(s) registro(s)?');
-        $notify->setIcon('mdi mdi-help-circle-outline');
-        $notify->addButton('Sim', $action);
-        $notify->addButton('Não', null);
-        $notify->show();
-    }
-    
-    /**
-     * Method Delete()
-     * Deleta o cadastro
-     * 
-     */
-    function delete($param)
-    {
-        try
-        {
-            //Abre transação
-            TTransaction::open($this->db);
-            
-            $object = new $this->model($param['key']);
-            $object->delete();  
-            
-            TTransaction::close();
 
-            $notify = new TNotify('Sucesso', 'Operação foi realizada');
-            $notify->setAutoRedirect([$this, 'onReload']);
-            $notify->enableNote();
-            $notify->show();
-        }
-        catch (Exception $e)
-        {
-            ErrorService::send($e);
-
-            $notify = new TNotify('Ops! Algo deu errado!', $e->getMessage());
-            $notify->setIcon('mdi mdi-close');
-            $notify->show();
-            
-            TTransaction::rollback();
-        }
-    }
-    
-    /**
-     * Method show()
-     * Exibe conteúdos pertencentes a tela criada
-     * 
-     */
     function show()
     {
         if (!$this->loaded)

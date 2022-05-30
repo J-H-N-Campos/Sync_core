@@ -1,15 +1,15 @@
 <?php
 /**
- * LoginForm
+ * LoginForm2
  *
  * @version    1.0
- * @date       18/04/2022
+ * @date       23/05/2022
  * @author     João De Campos
  * @copyright  Copyright (c) 2006-2014 Adianti Solutions Ltd. (http://www.adianti.com.br)
  * @license    http://www.adianti.com.br/framework-license
  */
  
-class LoginForm extends TPage
+class LoginForm2 extends TPage
 {
     protected $form; 
     private   $db;
@@ -128,7 +128,7 @@ class LoginForm extends TPage
 
             TTransaction::close();
 
-            self::onTerm($user, 'index.php?class=LoginForm');
+            self::onTerm($user, 'index.php?class=BuyList');
         }
         catch (Exception $e)
         {
@@ -146,7 +146,7 @@ class LoginForm extends TPage
     {
         TTransaction::open('sync');
             
-        $url  = 'index.php?class=Home';
+        $url  = 'index.php?class=BuyList';
         $rest = parse_ini_file('app/config/rest_client.ini', true);
         
         if(!$user->fl_term AND !empty($rest['peopleguard']['location_code']))
@@ -160,7 +160,7 @@ class LoginForm extends TPage
             $guard_data                 = [];
             $guard_data['cpf']          = $person_individual->cpf;
             $guard_data['url_back']     = "{$ini['url']}/{$url_back}";
-            $guard_data['url_continue'] = "{$ini['url']}/index.php?class=LoginForm&method=onContinue&static=1";
+            $guard_data['url_continue'] = "{$ini['url']}/index.php?class=LoginForm2&method=onContinue&static=1";
     
             //Chama no guard
             $url  = TRestClient::post('peopleguard', 'owner', 'create', [$rest['peopleguard']['location_code'], $guard_data]);
@@ -226,7 +226,7 @@ class LoginForm extends TPage
     public static function onLogout()
     {
         TSession::freeSession();
-        TServer::redirect('index.php?class=LoginForm');
+        TServer::redirect('index.php?class=LoginForm2');
     }
 
     public static function updatePermissions()

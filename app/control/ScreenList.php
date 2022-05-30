@@ -44,6 +44,7 @@ class ScreenList extends TPage
             $controller     = new TEntry('controller');
             
             //Busca - Formulário
+            $this->form->addTab('Dados', 'mdi mdi-chart-donut');
             $this->form->addFieldLine($name,        'Nome',         [350, null]);
             $this->form->addFieldLine($controller,  'Controladora', [350, null]);
             $this->form->addFieldLine($menu_id,     'Menu',         [250, null]);

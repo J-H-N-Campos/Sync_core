@@ -46,6 +46,7 @@ class UserList extends TPage
             $id->setMask('{id} - {name} {aux}');
 
             //Busca - Formulário
+            $this->form->addTab('Dados', 'mdi mdi-chart-donut');
             $this->form->addFieldLine($id,  'Pessoa', [450, null]);
 
             //Busca - Ações
